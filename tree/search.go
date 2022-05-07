@@ -95,10 +95,12 @@ func bfs(n *node, f func(*node)) error {
 			return fmt.Errorf("Could not get head nodelist element: %w", err)
 		}
 
-		for _, child := range nlE.n.children {
-			nList.add(child)
+		if (nlE.n != nil) && (nlE.n.children != nil) {
+			for _, child := range nlE.n.children {
+				nList.add(child)
+			}
+			f(nlE.n)
 		}
-		f(nlE.n)
 	}
 
 	return nil
