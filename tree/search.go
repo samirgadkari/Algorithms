@@ -86,8 +86,10 @@ func (nl *nodesList) notEmpty() bool {
 
 func bfs(n *node, f func(*node)) error {
 
+	allNodes := make(map[int]bool)
 	nList := newNodesList()
 	nList.add(n)
+	allNodes[n.v.v] = true
 
 	for nList.notEmpty() {
 		nlE, err := nList.getHead()
@@ -97,8 +99,16 @@ func bfs(n *node, f func(*node)) error {
 
 		if (nlE.n != nil) && (nlE.n.children != nil) {
 			for _, child := range nlE.n.children {
+				if _, ok := allNodes[child.v.v]; ok {
+					// fmt.Printf("Loop detected - ignoring value: %d\n", child.v.v)
+					continue
+				}
 				nList.add(child)
+				allNodes[child.v.v] = true
 			}
+		}
+
+		if nlE.n != nil {
 			f(nlE.n)
 		}
 	}

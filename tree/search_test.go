@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -46,7 +45,7 @@ func newSearchTreeSuite() *SearchTreeSuite {
 
 			edges: [][]int{{1, 2}, {3, 4}, {5, 6},
 				{2, 3}, {4, 5}, {6, 1}},
-			bfsNodes: []int{1, 2, 3, 5, 4, 6},
+			bfsNodes: []int{1, 2, 3, 4, 5, 6},
 			dfsNodes: []int{1, 2, 3, 4, 5, 6},
 			topNode:  nil,
 		},
@@ -60,8 +59,8 @@ func newSearchTreeSuite() *SearchTreeSuite {
 		},
 	}
 
-	for _, test := range s.tests {
-		test.topNode = tree(test.edges)
+	for i, test := range s.tests {
+		s.tests[i].topNode = tree(test.edges)
 	}
 
 	return s
@@ -75,10 +74,9 @@ func (s *SearchTreeSuite) TestSearchTree() {
 
 		err := bfs(test.topNode, func(n *node) {
 			result = append(result, n.v.v)
-			fmt.Printf("%d ", n.v.v)
 		})
-		fmt.Println()
 		r.Equal(err, nil)
+
 		r.Equal(test.bfsNodes, result)
 	}
 }
