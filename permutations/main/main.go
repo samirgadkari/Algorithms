@@ -1,57 +1,109 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
-// 1. find the index of the decreasing value from the right (index of 3)
-// 2. find the index with the value slightly larger than it from the decreasing value onwards (index of 4)
-// 3. swap those values
-// 4. reverse the right hand string
-func permute(digits []uint8, res [][]uint8) ([][]uint8, error) {
+type permute func(*pHelper)
+type pHelper struct {
+	nums        []int
+	ignore      []int
+	numIgnore   int
+	keepInitial bool
+}
 
-	for {
-		decIdx := -1
-		for i := len(digits); i >= 1; i-- {
-			if digits[i-1] < digits[i] {
-				decIdx = i - 1
-				break
-			}
-		}
-		if decIdx == -1 {
-			return res, nil
-		}
+func findTwoNonIgnoredIdx(helper *pHelper) (int, int) {
 
-		nextBiggestIdx := -1
-		for i, digit := range digits[decIdx+1:] {
-			if digit > digits[decIdx] &&
-				digit < digits[nextBiggestIdx] {
-				nextBiggestIdx = i
-			}
-		}
-		if nextBiggestIdx == -1 {
-			return nil, fmt.Errorf("Error during permute")
-		}
+	idx := make([]int, 0)
 
-		digits[nextBiggestIdx], digits[decIdx] = digits[decIdx], digits[nextBiggestIdx]
-		for left, right := decIdx+1, len(digits)-1; left < right; left, right = left+1, right-1 {
-			digits[left], digits[right] = digits[right], digits[left]
+	for i, v := range helper.ignore {
+		if v == 0 {
+			idx = append(idx, i)
 		}
-
-		res = append(res, digits)
 	}
 
-	return nil, fmt.Errorf("Should not reach here")
+	return idx[0], idx[1]
+}
+
+func permuteFunc(digits []int) (<-chan []int, permute) {
+
+	result := make(chan []int)
+
+	var r []int
+	var p permute
+	p = func(helper *pHelper) {
+
+		if helper.numIgnore == len(helper.ignore)-2 {
+
+			if helper.keepInitial {
+				r = make([]int, len(helper.nums))
+				copy(r, helper.nums)
+				result <- r
+			}
+
+			idx1, idx2 := findTwoNonIgnoredIdx(helper)
+			helper.nums[idx1], helper.nums[idx2] =
+				helper.nums[idx2], helper.nums[idx1]
+
+			r = make([]int, len(helper.nums))
+			copy(r, helper.nums)
+			result <- r
+
+			helper.nums[idx2], helper.nums[idx1] =
+				helper.nums[idx1], helper.nums[idx2]
+			return
+		}
+
+		for j := 1; j <= len(helper.nums); j++ {
+			helper.keepInitial = true
+			for i := 0; i < len(helper.ignore)-2; i++ {
+				if helper.ignore[i] == 0 {
+					helper.ignore[i] = 1
+					helper.numIgnore++
+					p(helper)
+					helper.ignore[i] = 0
+					helper.numIgnore--
+					helper.keepInitial = false
+				}
+			}
+
+			if j > 1 {
+				helper.nums[j-1], helper.nums[0] = helper.nums[0], helper.nums[j-1]
+			}
+
+			if j < len(helper.nums) {
+				helper.nums[0], helper.nums[j] = helper.nums[j], helper.nums[0]
+			}
+		}
+
+		close(result)
+	}
+
+	return result, p
 }
 
 func main() {
 
-	var digits = []uint8{0, 1, 2, 3, 4}
-	var res [][]uint8
+	// Permutations of 0, 1, 2:
+	// 0 1 2
+	// 0 2 1
+	// 1 0 2
+	// 1 2 0
+	// 2 0 1
+	// 2 1 0
+	var digits = []int{0, 1, 2}
 
-	res, err := permute(digits, res)
-	if err != nil {
-		fmt.Printf("Error permuting %v: %s\n", digits, err.Error())
-		return
+	res, p := permuteFunc(digits)
+
+	helper := &pHelper{
+		nums:   digits,
+		ignore: make([]int, len(digits)),
 	}
 
-	fmt.Printf("Result: %v\n", res[:10])
+	go p(helper)
+
+	for v := range res {
+
+		fmt.Printf("%v\n", v)
+	}
 }
