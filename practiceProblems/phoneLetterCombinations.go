@@ -61,6 +61,9 @@ func letterCombinations(digits string) []string {
 
 	result := lc(digits)
 	res := make([]string, 0)
+	if len(digits) == 0 {
+		return res
+	}
 	for s := range result {
 		res = append(res, s)
 	}
@@ -70,7 +73,7 @@ func letterCombinations(digits string) []string {
 
 func main() {
 
-	number := "23"
+	number := "2859"
 
 	result := letterCombinations(number)
 	for _, s := range result {
